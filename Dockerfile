@@ -3,13 +3,10 @@ FROM manjarolinux/base:latest
 ARG MIRROR_URL
 
 ENV LANG=en_US.UTF-8
-ENV TZ=America/Los_Angeles
+ENV TZ=America/New_York
 ENV PATH="/usr/bin:${PATH}"
 ENV PUSER=user
 ENV PUID=1000
-
-# Remove unnecessary files from the base image.
-RUN rm -f /.BUILDINFO /.INSTALL /.PKGINFO /.MTREE
 
 # Configure the locale; enable only en_US.UTF-8 and the current locale.
 RUN sed -i -e 's~^\([^#]\)~#\1~' '/etc/locale.gen' && \
@@ -30,11 +27,6 @@ RUN pacman-mirrors --country United_States --api --set-branch stable --protocol 
     mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak && \
     echo "Server = ${MIRROR_URL}/stable/\$repo/\$arch" > /etc/pacman.d/mirrorlist; \
   fi
-
-# Install the keyrings.
-RUN pacman-key --init && \
-  pacman -Syy --noconfirm --needed archlinux-keyring manjaro-keyring && \
-  pacman-key --populate archlinux manjaro
 
 # Install the core packages.
 RUN pacman -S --noconfirm --needed \
@@ -127,8 +119,6 @@ RUN pacman -Sy --noconfirm --needed \
   python-netifaces \
   python-pip \
   python-setuptools \
-  python2 \
-  python2-setuptools \
   rclone \
   ripgrep \
   rsync \
@@ -156,77 +146,10 @@ RUN pacman -Sy --noconfirm --needed \
   zip && \
 pacman -Scc --noconfirm
 
-# Copy the pre-built packages.
-COPY packages/ /packages/
-
-# Install the pre-built packages.
-RUN pacman -U --noconfirm --needed /packages/*/*.tar.* && \
-  rm -fr /packages && \
-  pacman -Scc --noconfirm
-
-# Install ncurses5-compat-libs from AUR.
-RUN \
-  cd /tmp && \
-  sudo -u builder gpg --recv-keys CC2AF4472167BE03 && \
-  sudo -u builder git clone https://aur.archlinux.org/ncurses5-compat-libs.git && \
-  cd ncurses5-compat-libs && \
-  sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/ncurses5-compat-libs/*.pkg.tar* && \
-  rm -fr /tmp/ncurses5-compat-libs && \
-  pacman -Scc --noconfirm
-
-# Install python38 and python39 from AUR.
-RUN \
-  cd /tmp && \
-  sudo -u builder gpg --recv-keys B26995E310250568 && \
-  sudo -u builder git clone https://aur.archlinux.org/python38.git && \
-  sudo -u builder git clone https://aur.archlinux.org/python39.git && \
-  cd /tmp/python38 && sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/python38/*.pkg.tar* && \
-  cd /tmp/python39 && sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/python39/*.pkg.tar* && \
-  rm -fr /tmp/python38 /tmp/python39 && \
-  pacman -Scc --noconfirm
-
-# Install scmpuff from AUR.
-# TODO: Uncomment once scmpuff in AUR is updated.
-#RUN \
-#  cd /tmp && \
-#  sudo -u builder git clone https://aur.archlinux.org/scmpuff.git && \
-#  cd /tmp/scmpuff && sudo -u builder makepkg --noconfirm && \
-#  pacman -U --noconfirm --needed /tmp/scmpuff/*.pkg.tar* && \
-#  rm -fr /tmp/scmpuff && \
-#  pacman -Scc --noconfirm
-
-# Install azure-cli-bin from AUR.
-RUN \
-  cd /tmp && \
-  sudo -u builder git clone https://aur.archlinux.org/azure-cli-bin.git && \
-  cd /tmp/azure-cli-bin && sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/azure-cli-bin/*.pkg.tar* && \
-  rm -fr /tmp/azure-cli-bin && \
-  pacman -Scc --noconfirm
-
-# Install gimme-aws-creds from AUR.
-# TODO: Uncomment once python-ctap-keyring-device is fixed.
-#RUN pacman -S --noconfirm --needed \
-#  python-beautifulsoup4 python-boto3 python-fido2 python-keyring python-pytest \
-#  python-pytest-black python-pytest-cov python-pytest-flake8 python-setuptools-scm && \
-#  cd /tmp && \
-#  sudo -u nobody git clone https://aur.archlinux.org/python-ctap-keyring-device.git && \
-#  sudo -u nobody git clone https://aur.archlinux.org/python-okta-legacy.git && \
-#  sudo -u nobody git clone https://aur.archlinux.org/gimme-aws-creds.git && \
-#  cd /tmp/python-ctap-keyring-device && \
-#  sudo -u nobody makepkg --noconfirm && \
-#  pacman -U --noconfirm --needed /tmp/python-ctap-keyring-device/*.pkg.tar* && \
-#  cd /tmp/python-okta-legacy && \
-#  sudo -u nobody makepkg --noconfirm && \
-#  pacman -U --noconfirm --needed /tmp/python-okta-legacy/*.pkg.tar* && \
-#  cd /tmp/gimme-aws-creds && \
-#  sudo -u nobody makepkg --noconfirm && \
-#  pacman -U --noconfirm --needed /tmp/gimme-aws-creds/*.pkg.tar* && \
-#  rm -fr /tmp/python-ctap-keyring-device /tmp/python-okta-legacy /tmp/gimme-aws-creds && \
-#  pacman -Scc --noconfirm
+# Configure Pamac.
+RUN sed -i -e \
+  's~#\(\(RemoveUnrequiredDeps\|SimpleInstall\|EnableAUR\|KeepBuiltPkgs\|CheckAURUpdates\|DownloadUpdates\).*\)~\1~g' \
+  /etc/pamac.conf
 
 # Install the fonts.
 RUN pacman -S --noconfirm --needed \
@@ -239,6 +162,17 @@ RUN pacman -S --noconfirm --needed \
   ttf-hack \
   ttf-liberation && \
 pacman -Scc --noconfirm
+
+# Install ncurses5-compat-libs from AUR.
+RUN \
+  cd /tmp && \
+  sudo -u builder gpg --recv-keys CC2AF4472167BE03 && \
+  sudo -u builder git clone https://aur.archlinux.org/ncurses5-compat-libs.git && \
+  cd ncurses5-compat-libs && \
+  sudo -u builder makepkg --noconfirm && \
+  pacman -U --noconfirm --needed /tmp/ncurses5-compat-libs/*.pkg.tar* && \
+  rm -fr /tmp/ncurses5-compat-libs && \
+  pacman -Scc --noconfirm
 
 # Install the common GUI packages.
 RUN pacman -S --noconfirm --needed \
@@ -325,33 +259,9 @@ RUN \
   make install && \
   rm -fr /tmp/pam_close_systemd_system_dbus-f8e6a9ac7bdbae7a78f09845da4e634b26082a73
 
-# Install Visual Studio Code from AUR.
-RUN cd /tmp && \
-  sudo -u nobody git clone https://aur.archlinux.org/visual-studio-code-bin.git && \
-  cd visual-studio-code-bin && \
-  sudo -u nobody makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/visual-studio-code-bin/*.pkg.tar* && \
-  rm -fr /tmp/visual-studio-code-bin && \
-  pacman -Scc --noconfirm
-
-# Install Google Chrome from AUR.
-RUN cd /tmp && \
-  sudo -u nobody git clone https://aur.archlinux.org/google-chrome.git && \
-  cd google-chrome && \
-  sudo -u nobody makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/google-chrome/*.pkg.tar* && \
-  rm -fr /tmp/google-chrome && \
-  pacman -Scc --noconfirm
-
-# Configure Pamac.
-RUN sed -i -e \
-  's~#\(\(RemoveUnrequiredDeps\|SimpleInstall\|EnableAUR\|KeepBuiltPkgs\|CheckAURUpdates\|DownloadUpdates\).*\)~\1~g' \
-  /etc/pamac.conf
-
 # Install the desktop environment packages.
 RUN pacman -S --noconfirm --needed \
   baobab \
-  chrome-gnome-shell \
   disable-tracker \
   eog \
   file-roller \
