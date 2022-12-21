@@ -12,7 +12,7 @@ ENV PUID=1000
 RUN sed -i -e 's~^\([^#]\)~#\1~' '/etc/locale.gen' && \
   echo -e '\nen_US.UTF-8 UTF-8' >> '/etc/locale.gen' && \
   if [[ "${LANG}" != 'en_US.UTF-8' ]]; then \
-    echo "${LANG}" >> '/etc/locale.gen'; \
+  echo "${LANG}" >> '/etc/locale.gen'; \
   fi && \
   locale-gen && \
   echo -e "LANG=${LANG}\nLC_ADDRESS=${LANG}\nLC_IDENTIFICATION=${LANG}\nLC_MEASUREMENT=${LANG}\nLC_MONETARY=${LANG}\nLC_NAME=${LANG}\nLC_NUMERIC=${LANG}\nLC_PAPER=${LANG}\nLC_TELEPHONE=${LANG}\nLC_TIME=${LANG}" > '/etc/locale.conf'
@@ -22,21 +22,20 @@ RUN echo "${TZ}" > /etc/timezone && \
   ln -sf "/usr/share/zoneinfo/${TZ}" /etc/localtime
 
 # Populate the mirror list.
-RUN pacman-mirrors --country United_States --api --set-branch stable --protocol https && \
+RUN pacman-mirrors -f && \
   if [[ -n "${MIRROR_URL}" ]]; then \
-    mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak && \
-    echo "Server = ${MIRROR_URL}/stable/\$repo/\$arch" > /etc/pacman.d/mirrorlist; \
+  mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak && \
+  echo "Server = ${MIRROR_URL}/stable/\$repo/\$arch" > /etc/pacman.d/mirrorlist; \
   fi
 
 # Install the core packages.
-RUN pacman -S --noconfirm --needed \
+RUN pacman -Syu --noconfirm --needed \
   diffutils \
   findutils \
   manjaro-release \
   manjaro-system \
-  pacman \
   sudo && \
-pacman -Scc --noconfirm
+  pacman -Scc --noconfirm
 
 # Make sure everything is up-to-date.
 RUN sed -i -e 's~^\(\(CheckSpace\|IgnorePkg\|IgnoreGroup\).*\)$~#\1~' /etc/pacman.conf && \
@@ -47,43 +46,25 @@ RUN sed -i -e 's~^\(\(CheckSpace\|IgnorePkg\|IgnoreGroup\).*\)$~#\1~' /etc/pacma
 
 # Install the common non-GUI packages.
 RUN pacman -Sy --noconfirm --needed \
+  wireplumber \
   autoconf \
   automake \
-  aws-cli \
   base-devel \
   bash-completion \
-  bind \
   bison \
-  bandwhich \
   bat \
-  bpf \
-  bpftrace \
   clang \
-  cmake \
-  dash \
-  difftastic \
   dmidecode \
-  docker \
-  dog \
-  downgrade \
-  dust \
-  exa \
   fakeroot \
-  fasd \
   fd \
   flex \
   fzf \
-  gdb \
   git \
-  glances \
-  hexyl \
   htop \
-  httpie \
   iftop \
   inetutils \
   iproute2 \
   iputils \
-  jdk11-openjdk \
   jq \
   logrotate \
   lrzip \
@@ -114,7 +95,6 @@ RUN pacman -Sy --noconfirm --needed \
   psmisc \
   python \
   python-cchardet \
-  python-docker \
   python-matplotlib \
   python-netifaces \
   python-pip \
@@ -122,46 +102,23 @@ RUN pacman -Sy --noconfirm --needed \
   rclone \
   ripgrep \
   rsync \
-  screen \
   sd \
   squashfs-tools \
-  strace \
-  sysstat \
   systemd-sysvcompat \
   tcpdump \
-  thrift \
-  tk \
-  tmux \
-  traceroute \
-  trash-cli \
   tree \
   unace \
   unrar \
   unzip \
-  vim \
-  wireplumber \
   wget \
-  xh \
   xz \
   zip && \
-pacman -Scc --noconfirm
+  pacman -Scc --noconfirm
 
 # Configure Pamac.
 RUN sed -i -e \
   's~#\(\(RemoveUnrequiredDeps\|SimpleInstall\|EnableAUR\|KeepBuiltPkgs\|CheckAURUpdates\|DownloadUpdates\).*\)~\1~g' \
   /etc/pamac.conf
-
-# Install the fonts.
-RUN pacman -S --noconfirm --needed \
-  noto-fonts \
-  noto-fonts-cjk \
-  noto-fonts-emoji \
-  ttf-fira-code \
-  ttf-fira-mono \
-  ttf-fira-sans \
-  ttf-hack \
-  ttf-liberation && \
-pacman -Scc --noconfirm
 
 # Install ncurses5-compat-libs from AUR.
 RUN \
@@ -175,67 +132,21 @@ RUN \
   pacman -Scc --noconfirm
 
 # Install the common GUI packages.
-RUN pacman -S --noconfirm --needed \
-  dconf-editor \
-  evince \
-  firefox \
-  gnome-keyring \
-  gnome-settings-daemon \
-  gvfs-google \
-  libappindicator-gtk2 \
-  libappindicator-gtk3 \
-  manjaro-application-utility \
-  pamac-gtk \
-  poppler-data \
-  qgnomeplatform-qt5 \
-  qgnomeplatform-qt6 \
-  seahorse \
-  wireshark-qt \
-  wmctrl \
-  xapp \
-  xdg-desktop-portal \
-  xdg-desktop-portal-gtk \
-  xdg-user-dirs \
-  xdg-user-dirs-gtk \
-  xdg-utils \
-  xdotool \
-  xorg \
-  xorg-twm \
-  xterm \
-  zenity && \
-pacman -Scc --noconfirm
+RUN pacman -Syu --noconfirm --needed \
+  gnome \
+  manjaro-gnome-settings \
+  manjaro-settings-manager \
+  manjaro-gnome-extension-settings
 
-# Install the common themes.
-RUN pacman -S --noconfirm --needed \
-  gnome-backgrounds \
-  gnome-themes-extra \
-  gnome-wallpapers \
-  gtk-engines \
-  gtk-engine-murrine \
-  matcha-gtk-theme \
-  kvantum-manjaro \
-  kvantum-theme-matcha \
-  papirus-maia-icon-theme \
-  xcursor-breeze && \
-pacman -Scc --noconfirm
-
-# Install input methods.
-RUN pacman -S --noconfirm --needed \
-  fcitx5-chinese-addons \
-  fcitx5-hangul \
-  fcitx5-m17n \
-  fcitx5-mozc \
-  fcitx5-rime \
-  fcitx5-unikey \
-  manjaro-asian-input-support-fcitx5 && \
-pacman -Scc --noconfirm
+# RUN pacman -Rs gnome-software && pacman -Syu --noconfirm --needed \
+#   pamac-gnome-integration
 
 # Install xrdp and xorgxrdp from AUR.
 # - Remove the generated XRDP RSA key because it will be generated at the first boot.
 # - Unlock gnome-keyring automatically for xrdp login.
 RUN \
-  pacman -S --noconfirm --needed \
-    check imlib2 tigervnc libxrandr fuse libfdk-aac ffmpeg nasm xorg-server-devel && \
+  pacman -Syu --noconfirm --needed \
+  check imlib2 tigervnc libxrandr fuse libfdk-aac ffmpeg nasm xorg-server-devel && \
   cd /tmp && \
   sudo -u builder gpg --recv-keys 61ECEABBF2BB40E3A35DF30A9F72CDBC01BF10EB && \
   sudo -u builder git clone https://aur.archlinux.org/xrdp.git && \
@@ -259,79 +170,50 @@ RUN \
   make install && \
   rm -fr /tmp/pam_close_systemd_system_dbus-f8e6a9ac7bdbae7a78f09845da4e634b26082a73
 
-# Install the desktop environment packages.
-RUN pacman -S --noconfirm --needed \
-  baobab \
-  disable-tracker \
-  eog \
-  file-roller \
-  gedit \
-  gedit-plugins \
-  gnome-calculator \
-  gnome-control-center \
-  gnome-layout-switcher \
-  gnome-shell-extension-appindicator \
-  gnome-shell-extension-dash-to-dock \
-  gnome-shell-extension-no-overview \
-  gnome-system-monitor \
-  gnome-terminal \
-  gnome-tweaks \
-  lighter-gnome \
-  manjaro-gnome-extension-settings \
-  manjaro-gnome-settings \
-  manjaro-hello \
-  nautilus-admin \
-  nautilus-empty-file \
-  pamac-gnome-integration \
-  polkit-gnome \
-  terminator \
-  xdg-desktop-portal-gnome && \
-pacman -Scc --noconfirm
-
 # Remove the cruft.
 RUN rm -f /etc/locale.conf.pacnew /etc/locale.gen.pacnew
 
 # Enable/disable the services.
 RUN \
   systemctl enable \
-    sshd.service && \
+  sshd.service && \
   systemctl mask \
-    bluetooth.service \
-    dev-sda1.device \
-    dm-event.service \
-    dm-event.socket \
-    geoclue.service \
-    initrd-udevadm-cleanup-db.service \
-    lvm2-lvmpolld.socket \
-    lvm2-monitor.service \
-    power-profiles-daemon.service \
-    systemd-boot-update.service \
-    systemd-firstboot.service \
-    systemd-modules-load.service \
-    systemd-network-generator.service \
-    systemd-networkd.service \
-    systemd-networkd.socket \
-    systemd-networkd-wait-online.service \
-    systemd-remount-fs.service \
-    systemd-udev-settle.service \
-    systemd-udev-trigger.service \
-    systemd-udevd.service \
-    systemd-udevd-control.socket \
-    systemd-udevd-kernel.socket \
-    udisks2.service \
-    upower.service \
-    usb-gadget.target \
-    usbmuxd.service && \
+  bluetooth.service \
+  dev-sda1.device \
+  dm-event.service \
+  dm-event.socket \
+  geoclue.service \
+  initrd-udevadm-cleanup-db.service \
+  lvm2-lvmpolld.socket \
+  lvm2-monitor.service \
+  power-profiles-daemon.service \
+  systemd-boot-update.service \
+  systemd-firstboot.service \
+  systemd-modules-load.service \
+  systemd-network-generator.service \
+  systemd-networkd.service \
+  systemd-networkd.socket \
+  systemd-networkd-wait-online.service \
+  systemd-remount-fs.service \
+  systemd-udev-settle.service \
+  systemd-udev-trigger.service \
+  systemd-udevd.service \
+  systemd-udevd-control.socket \
+  systemd-udevd-kernel.socket \
+  udisks2.service \
+  upower.service \
+  usb-gadget.target \
+  usbmuxd.service && \
   systemctl mask --global \
-    gvfs-mtp-volume-monitor.service \
-    gvfs-udisks2-volume-monitor.service \
-    obex.service \
-    pipewire.service \
-    pipewire.socket \
-    pipewire-media-session.service \
-    pipewire-pulse.service \
-    pipewire-pulse.socket \
-    wireplumber.service
+  gvfs-mtp-volume-monitor.service \
+  gvfs-udisks2-volume-monitor.service \
+  obex.service \
+  pipewire.service \
+  pipewire.socket \
+  pipewire-media-session.service \
+  pipewire-pulse.service \
+  pipewire-pulse.socket \
+  wireplumber.service
 
 # Copy the configuration files and scripts.
 COPY files/ /
@@ -346,10 +228,22 @@ RUN systemctl enable fix-colord.service
 # Delete the 'builder' user from the base image.
 RUN userdel --force --remove builder
 
+# Create and configure user
+RUN groupadd sudo && \
+  useradd  \
+  --shell /bin/zsh \
+  -g users \
+  -G sudo,lp,network,power,sys,wheel \
+  --badname \
+  -u "$PUID" \
+  -d "/home/$PUSER" \
+  -m -N "$PUSER" && \
+  echo -e "$PUSER\n$PUSER" | passwd "$PUSER"
+
 # Switch to the default mirrors since we finished downloading packages.
 RUN \
   if [[ -n "${MIRROR_URL}" ]]; then \
-    mv /etc/pacman.d/mirrorlist.bak /etc/pacman.d/mirrorlist; \
+  mv /etc/pacman.d/mirrorlist.bak /etc/pacman.d/mirrorlist; \
   fi
 
 # Expose SSH and RDP ports.
