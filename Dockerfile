@@ -1,7 +1,5 @@
 FROM manjarolinux/base:latest
 
-ARG MIRROR_URL
-
 ENV LANG=en_US.UTF-8
 ENV TZ=America/New_York
 ENV PATH="/usr/bin:${PATH}"
@@ -22,11 +20,7 @@ RUN echo "${TZ}" > /etc/timezone && \
   ln -sf "/usr/share/zoneinfo/${TZ}" /etc/localtime
 
 # Populate the mirror list.
-RUN pacman-mirrors -f && \
-  if [[ -n "${MIRROR_URL}" ]]; then \
-  mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak && \
-  echo "Server = ${MIRROR_URL}/stable/\$repo/\$arch" > /etc/pacman.d/mirrorlist; \
-  fi
+RUN pacman-mirrors -f
 
 # Install the core packages.
 RUN pacman -Syu --noconfirm --needed \
@@ -120,16 +114,13 @@ RUN sed -i -e \
   's~#\(\(RemoveUnrequiredDeps\|SimpleInstall\|EnableAUR\|KeepBuiltPkgs\|CheckAURUpdates\|DownloadUpdates\).*\)~\1~g' \
   /etc/pamac.conf
 
-# Install ncurses5-compat-libs from AUR.
-RUN \
-  cd /tmp && \
-  sudo -u builder gpg --recv-keys CC2AF4472167BE03 && \
-  sudo -u builder git clone https://aur.archlinux.org/ncurses5-compat-libs.git && \
-  cd ncurses5-compat-libs && \
+# Install paru AUR helper from AUR.
+RUN cd /tmp && \
+  sudo -u builder git clone https://aur.archlinux.org/paru-bin.git && \
+  cd paru-bin && \
   sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/ncurses5-compat-libs/*.pkg.tar* && \
-  rm -fr /tmp/ncurses5-compat-libs && \
-  pacman -Scc --noconfirm
+  sudo pacman -U --noconfirm --needed ./*.pkg.tar* && \
+  sudo rm -rf /tmp/paru-bin
 
 # Install the common GUI packages.
 RUN pacman -Syu --noconfirm --needed \
@@ -141,22 +132,15 @@ RUN pacman -Syu --noconfirm --needed \
 # RUN pacman -Rs gnome-software && pacman -Syu --noconfirm --needed \
 #   pamac-gnome-integration
 
+# Install ncurses5-compat-libs from AUR.
+RUN paru -S --noconfirm ncurses5-compat-libs
+
 # Install xrdp and xorgxrdp from AUR.
 # - Remove the generated XRDP RSA key because it will be generated at the first boot.
 # - Unlock gnome-keyring automatically for xrdp login.
-RUN \
-  pacman -Syu --noconfirm --needed \
+RUN pacman -Syu --noconfirm --needed \
   check imlib2 tigervnc libxrandr fuse libfdk-aac ffmpeg nasm xorg-server-devel && \
-  cd /tmp && \
-  sudo -u builder gpg --recv-keys 61ECEABBF2BB40E3A35DF30A9F72CDBC01BF10EB && \
-  sudo -u builder git clone https://aur.archlinux.org/xrdp.git && \
-  sudo -u builder git clone https://aur.archlinux.org/xorgxrdp.git && \
-  cd /tmp/xrdp && sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/xrdp/*.pkg.tar* && \
-  cd /tmp/xorgxrdp && sudo -u builder makepkg --noconfirm && \
-  pacman -U --noconfirm --needed /tmp/xorgxrdp/*.pkg.tar* && \
-  rm -fr /tmp/xrdp /tmp/xorgxrdp /etc/xrdp/rsakeys.ini && \
-  pacman -Scc --noconfirm && \
+  paru -S --noconfirm xrdp xorgxrdp && \
   systemctl enable xrdp.service
 
 # Install the workaround for:
@@ -175,8 +159,7 @@ RUN rm -f /etc/locale.conf.pacnew /etc/locale.gen.pacnew
 
 # Enable/disable the services.
 RUN \
-  systemctl enable \
-  sshd.service && \
+  systemctl enable sshd.service && \
   systemctl mask \
   bluetooth.service \
   dev-sda1.device \
@@ -239,12 +222,6 @@ RUN groupadd sudo && \
   -d "/home/$PUSER" \
   -m -N "$PUSER" && \
   echo -e "$PUSER\n$PUSER" | passwd "$PUSER"
-
-# Switch to the default mirrors since we finished downloading packages.
-RUN \
-  if [[ -n "${MIRROR_URL}" ]]; then \
-  mv /etc/pacman.d/mirrorlist.bak /etc/pacman.d/mirrorlist; \
-  fi
 
 # Expose SSH and RDP ports.
 EXPOSE 22
