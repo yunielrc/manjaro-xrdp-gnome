@@ -81,8 +81,7 @@ RUN sed -i -e \
 RUN cd /tmp && \
   sudo -u builder git clone https://aur.archlinux.org/paru-bin.git && \
   cd paru-bin && \
-  sudo -u builder makepkg --noconfirm && \
-  sudo pacman -U --noconfirm --needed ./*.pkg.tar* && \
+  sudo -u builder makepkg -si --noconfirm --needed && \
   sudo rm -rf /tmp/paru-bin
 
 # Install the common GUI packages.
@@ -90,20 +89,68 @@ RUN pacman -Syu --noconfirm --needed \
   gnome \
   manjaro-gnome-settings \
   manjaro-settings-manager \
-  manjaro-gnome-extension-settings
-
+  manjaro-gnome-extension-settings && \
+  pacman -Rs --noconfirm gnome-software && \
+  pacman -Syu --noconfirm --needed pamac-gnome-integration
 # RUN pacman -Rs gnome-software && pacman -Syu --noconfirm --needed \
 #   pamac-gnome-integration
 
 # Install ncurses5-compat-libs from AUR.
-RUN paru -S --noconfirm ncurses5-compat-libs
+RUN sudo -u builder  paru -S --noconfirm ncurses5-compat-libs
+
+# Install packages
+RUN pacman -Syu --noconfirm --needed \
+  adobe-source-sans-fonts \
+  adwaita-qt5 \
+  adwaita-qt6 \
+  amtk \
+  cronie \
+  gnome-browser-connector \
+  gnome-themes-extra \
+  gnome-tweaks \
+  gnome-wallpapers \
+  inxi \
+  mailcap \
+  manjaro-application-utility \
+  manjaro-artwork \
+  manjaro-hello \
+  manjaro-settings-manager-notifier \
+  man-pages \
+  mousetweaks \
+  nano \
+  nano-syntax-highlighting \
+  nautilus-admin \
+  nautilus-empty-file \
+  networkmanager \
+  noto-fonts \
+  ntp \
+  numactl \
+  numlockx \
+  os-prober \
+  papirus-maia-icon-theme \
+  polkit-gnome \
+  qgnomeplatform-qt5 \
+  qgnomeplatform-qt6 \
+  shared-color-targets \
+  ttf-dejavu \
+  ttf-droid \
+  ttf-inconsolata \
+  ttf-indic-otf \
+  ttf-liberation \
+  vim \
+  vte3 \
+  web-installer-url-handler \
+  xcursor-breeze \
+  xorg-mkfontscale \
+  xorg-twm \
+  zenity
+
 
 # Install xrdp and xorgxrdp from AUR.
-# - Remove the generated XRDP RSA key because it will be generated at the first boot.
 # - Unlock gnome-keyring automatically for xrdp login.
 RUN pacman -Syu --noconfirm --needed \
   check imlib2 tigervnc libxrandr fuse libfdk-aac ffmpeg nasm xorg-server-devel && \
-  paru -S --noconfirm xrdp xorgxrdp && \
+  sudo -u builder paru -S --noconfirm xrdp xorgxrdp && \
   systemctl enable xrdp.service
 
 # Install the workaround for:
@@ -132,7 +179,6 @@ RUN systemctl enable sshd.service && \
   lvm2-monitor.service \
   power-profiles-daemon.service \
   systemd-boot-update.service \
-  systemd-firstboot.service \
   systemd-modules-load.service \
   systemd-network-generator.service \
   systemd-networkd.service \
@@ -160,10 +206,7 @@ RUN systemctl enable sshd.service && \
   wireplumber.service
 
 # Copy the configuration files and scripts.
-COPY files/ /
-
-# Enable the first boot time script.
-RUN systemctl enable first-boot.service
+COPY rootfs/ /
 
 # Workaround for the colord authentication issue.
 # See: https://unix.stackexchange.com/a/581353
