@@ -28,86 +28,49 @@ RUN pacman -Syu --noconfirm --needed \
   findutils \
   manjaro-release \
   manjaro-system \
-  sudo && \
-  pacman -Scc --noconfirm
+  sudo
 
 # Make sure everything is up-to-date.
 RUN sed -i -e 's~^\(\(CheckSpace\|IgnorePkg\|IgnoreGroup\).*\)$~#\1~' /etc/pacman.conf && \
-  pacman -Syyu --noconfirm --needed && \
+  pacman -Syu --noconfirm --needed && \
   mv -f /etc/pacman.conf.pacnew /etc/pacman.conf && \
-  sed -i -e 's~^\(CheckSpace.*\)$~#\1~' /etc/pacman.conf && \
-  pacman -Scc --noconfirm
+  sed -i -e 's~^\(CheckSpace.*\)$~#\1~' /etc/pacman.conf
 
 # Install the common non-GUI packages.
-RUN pacman -Sy --noconfirm --needed \
+RUN pacman -Syu --noconfirm --needed \
   wireplumber \
-  autoconf \
-  automake \
   base-devel \
   bash-completion \
-  bison \
-  bat \
   clang \
   dmidecode \
   fakeroot \
-  fd \
-  flex \
-  fzf \
   git \
   htop \
-  iftop \
   inetutils \
   iproute2 \
   iputils \
-  jq \
   logrotate \
-  lrzip \
-  lsof \
   man-db \
   manjaro-aur-support \
   manjaro-base-skel \
-  manjaro-browser-settings \
-  manjaro-hotfixes \
   manjaro-pipewire \
   manjaro-zsh-config \
-  meson \
-  mpdecimal \
-  net-tools \
   nfs-utils \
-  nodejs-lts-fermium \
-  openbsd-netcat \
   openresolv \
   openssh \
-  p7zip \
   pamac-cli \
-  perf \
-  pigz \
   pipewire-jack \
-  pkgconf \
   procps-ng \
   protobuf \
   psmisc \
   python \
-  python-cchardet \
-  python-matplotlib \
-  python-netifaces \
-  python-pip \
-  python-setuptools \
-  rclone \
-  ripgrep \
   rsync \
   sd \
-  squashfs-tools \
   systemd-sysvcompat \
-  tcpdump \
-  tree \
-  unace \
-  unrar \
   unzip \
   wget \
   xz \
-  zip && \
-  pacman -Scc --noconfirm
+  zip
 
 # Configure Pamac.
 RUN sed -i -e \
@@ -146,8 +109,7 @@ RUN pacman -Syu --noconfirm --needed \
 # Install the workaround for:
 # - https://github.com/neutrinolabs/xrdp/issues/1684
 # - GNOME Keyring asks for password at login.
-RUN \
-  cd /tmp && \
+RUN cd /tmp && \
   wget 'https://github.com/matt335672/pam_close_systemd_system_dbus/archive/f8e6a9ac7bdbae7a78f09845da4e634b26082a73.zip' && \
   unzip f8e6a9ac7bdbae7a78f09845da4e634b26082a73.zip && \
   cd /tmp/pam_close_systemd_system_dbus-f8e6a9ac7bdbae7a78f09845da4e634b26082a73 && \
@@ -158,8 +120,7 @@ RUN \
 RUN rm -f /etc/locale.conf.pacnew /etc/locale.gen.pacnew
 
 # Enable/disable the services.
-RUN \
-  systemctl enable sshd.service && \
+RUN systemctl enable sshd.service && \
   systemctl mask \
   bluetooth.service \
   dev-sda1.device \
