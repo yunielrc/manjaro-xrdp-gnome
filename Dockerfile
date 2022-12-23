@@ -157,7 +157,7 @@ RUN pacman -Syu --noconfirm --needed \
 # - https://github.com/neutrinolabs/xrdp/issues/1684
 # - GNOME Keyring asks for password at login.
 RUN cd /tmp && \
-  wget 'https://github.com/matt335672/pam_close_systemd_system_dbus/archive/f8e6a9ac7bdbae7a78f09845da4e634b26082a73.zip' && \
+  wget --progress=dot:giga 'https://github.com/matt335672/pam_close_systemd_system_dbus/archive/f8e6a9ac7bdbae7a78f09845da4e634b26082a73.zip' && \
   unzip f8e6a9ac7bdbae7a78f09845da4e634b26082a73.zip && \
   cd /tmp/pam_close_systemd_system_dbus-f8e6a9ac7bdbae7a78f09845da4e634b26082a73 && \
   make install && \
