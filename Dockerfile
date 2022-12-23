@@ -166,6 +166,9 @@ RUN cd /tmp && \
 # Remove the cruft.
 RUN rm -f /etc/locale.conf.pacnew /etc/locale.gen.pacnew
 
+# Clean Pacman cache
+RUN pacman -Scc --noconfirm
+
 # Enable/disable the services.
 RUN systemctl enable sshd.service && \
   systemctl mask \
