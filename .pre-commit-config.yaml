@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shfmt
+      - id: shellcheck
+
+  - repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v2.1.1
+    hooks:
+      - id: docker-compose-check
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+
+  - repo: local
+    hooks:
+      - id: test
+        name: Test docker image build
+        entry: make test
+        language: system
+        files: (^rootfs/|^Dockerfile$)
