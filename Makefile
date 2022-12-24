@@ -2,7 +2,15 @@ REPO := $(shell basename $$(git rev-parse --show-toplevel))
 DOCKER_IMAGE := yunielrc/$(REPO):latest
 DOCKER_CONTAINER := $(REPO)
 
-.PHONY: build run remove build-run test
+.PHONY: commit build run remove build-run test
+
+commit:
+	git cz
+
+push-version:
+	version="v$$(date +"%Y%m%d-%H%M%S")"
+	git tag -a "$${version}" -m "New version v$${version}"
+	git push origin --tags
 
 build:
 	docker build -t $(DOCKER_IMAGE) .
