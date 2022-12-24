@@ -1,15 +1,15 @@
 REPO := $(shell basename $$(git rev-parse --show-toplevel))
 DOCKER_IMAGE := yunielrc/$(REPO):latest
 DOCKER_CONTAINER := $(REPO)
+VERSION=v$(shell date +'%Y%m%d-%H%M%S')
 
-.PHONY: commit build run remove build-run test
+.PHONY: commit push-version build run remove build-run test
 
 commit:
 	git cz
 
 push-version:
-	version="v$$(date +"%Y%m%d-%H%M%S")"
-	git tag -a "$${version}" -m "New version v$${version}"
+	git tag -a "$(VERSION)" -m "New version $(VERSION)"
 	git push origin --tags
 
 build:
