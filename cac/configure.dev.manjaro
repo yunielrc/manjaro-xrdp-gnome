@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euEo pipefail
+# shellcheck disable=SC2155
+readonly BASE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+"${BASE_PATH}/configure.prod.manjaro"
+
+# Install paru AUR Helper
+if ! type -P paru &>/dev/null; then
+  cd /tmp &&
+    # sudo gpg --recv-keys CC2AF4472167BE03 &&
+    [ -d ./paru-bin ] && sudo rm -rf ./paru-bin
+  sudo -u "${DOCKER_USER:-$USER}" git clone https://aur.archlinux.org/paru-bin.git &&
+    cd paru-bin &&
+    sudo -u "${DOCKER_USER:-$USER}" makepkg --noconfirm &&
+    sudo pacman -U --noconfirm --needed ./*.pkg.tar*
+  sudo rm -rf /tmp/paru-bin
+fi
+
+sudo paru -Syu --noconfirm --needed \
+  docker-buildx \
+  docker-scan \
+  shfmt \
+  shellcheck \
+  hadolint-bin \
+  python-pre-commit \
+  bash-bats \
+  bash-bats-assert \
+  bash-bats-file \
+  bash-bats-support \
+  nodejs \
+  npm
+
+sudo npm install -g \
+  @commitlint/cli \
+  @commitlint/config-conventional \
+  commitizen \
+  cz-conventional-changelog
