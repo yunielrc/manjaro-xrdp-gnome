@@ -1,4 +1,4 @@
-# GNOME remote desktop Docker image powered by Manjaro and xrdp
+# GNOME remote desktop Docker image powered by Manjaro and xrdp for testing purposes
 
 This repository provides the Docker image that runs a [GNOME](https://gnome.org/)
 desktop on top of [Manjaro Linux](https://manjaro.org). The desktop is accessible via
