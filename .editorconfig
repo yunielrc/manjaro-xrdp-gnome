@@ -15,10 +15,5 @@ max_line_length = 80
 max_line_length = 120
 trim_trailing_whitespace = false
 
-[*.ascii]
-max_line_length = 500
-trim_trailing_whitespace = false
-insert_final_newline = false
-
-[.rsyncignore]
-insert_final_newline = false
+[Makefile]
+indent_style = tab
